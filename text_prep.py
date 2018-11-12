@@ -13,6 +13,7 @@ import re
 def preprocess_text(text,method='stem',stop=True,lang='russian'):
     """function for text preprocessing for RUS/ENG languages"""
     stopwords_list = stopwords.words(lang) if stop else []
+    if lang=='english' and stop: stopwords_list.append("n't")
     unicode_dict = {'«':'"','»':'"','—':'-','’':"'"}
     for symbol in unicode_dict:
         text = text.replace(symbol,unicode_dict[symbol])
@@ -21,20 +22,22 @@ def preprocess_text(text,method='stem',stop=True,lang='russian'):
         if lang == 'russian':
             lemm = Mystem()
             tokens = lemm.lemmatize(text.lower())
+            tokens = [token for token in tokens if token not in stopwords_list and token != ' ' and token.strip() not in punctuation and len(token)>2]
         else:
             lemm = WordNetLemmatizer()
             tokens = word_tokenize(text.lower()) # list(text.lower().split()) # english workaround with len
-            tokens = [lemm.lemmatize(w) for w in tokens]
-        tokens = [token for token in tokens if token not in stopwords_list and token != ' ' and token.strip() not in punctuation and len(token)>2]
+            tokens = [lemm.lemmatize(token) for token in tokens if token not in stopwords_list and token != ' ' and token.strip() not in punctuation and len(token)>2]
     elif method == 'stem':
         stemmer = SnowballStemmer(lang)
         tokens = word_tokenize(text.lower()) # list(text.lower().split()) #english workaround with len
         tokens = [stemmer.stem(token) for token in tokens if token not in stopwords_list and token not in punctuation and len(token)>2]
         
     text = ' '.join(tokens)
+    #for symbol in punctuation:
+        #text = text.replace(symbol,'')
     for symbol in punctuation:
         text = text.replace(symbol,'')
-        
+    text = re.sub(r'\d+','',text)
     return re.sub(' +', ' ',text)
 
 # Examples
